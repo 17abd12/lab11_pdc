@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Solr Search</title>
+</head>
+<body style="font-family: Arial, sans-serif; background: #f2f2f2; margin: 0; padding: 0;">
+    <div style="width: 60%; margin: 50px auto; padding: 20px; background: white; border-radius: 8px;">
+        <h1 style="text-align: center;">Search Solr</h1>
+        <div style="margin-bottom: 10px;">
+            <input type="text" id="search-input" placeholder="Search..." autocomplete="off"
+                style="padding: 10px; width: 60%; margin-right: 10px;" />
+            <select id="filter" style="padding: 10px;">
+                <option value="">All</option>
+                <option value="category:news">News</option>
+                <option value="category:tech">Tech</option>
+            </select>
+        </div>
+        <ul id="suggestions" style="list-style: none; padding-left: 0; margin-top: 5px;"></ul>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const input = document.getElementById("search-input");
+        const filter = document.getElementById("filter");
+        const results = document.getElementById("results");
+        const suggestions = document.getElementById("suggestions");
+
+        input.addEventListener("input", () => {
+            fetch(`/autocomplete?prefix=${input.value}`)
+                .then(res => res.json())
+                .then(data => {
+                    suggestions.innerHTML = "";
+                    data.forEach(item => {
+                        let li = document.createElement("li");
+                        li.textContent = item;
+                        li.onclick = () => {
+                            input.value = item;
+                            suggestions.innerHTML = "";
+                            performSearch();
+                        };
+                        li.style.background = "#eee";
+                        li.style.padding = "5px";
+                        li.style.cursor = "pointer";
+                        suggestions.appendChild(li);
+                    });
+                });
+        });
+
+        input.addEventListener("keypress", e => {
+            if (e.key === "Enter") performSearch();
+        });
+
+        filter.addEventListener("change", performSearch);
+
+        function performSearch() {
+            const query = input.value;
+            const selectedFilter = filter.value;
+            fetch(`/search?q=${query}&filter=${selectedFilter}`)
+                .then(res => res.json())
+                .then(data => {
+                    results.innerHTML = "<h2>Results</h2>";
+                    data.forEach(doc => {
+                        let div = document.createElement("div");
+                        div.innerHTML = `<pre>${JSON.stringify(doc, null, 2)}</pre>`;
+                        div.style.marginTop = "10px";
+                        div.style.padding = "10px";
+                        div.style.background = "#f9f9f9";
+                        div.style.borderLeft = "3px solid #007BFF";
+                        results.appendChild(div);
+                    });
+                });
+        }
+    </script>
+</body>
+</html>
